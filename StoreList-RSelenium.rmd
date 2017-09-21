@@ -1,11 +1,11 @@
 ---
-title: "VIP_Spider"
-author: "Julai"
+title: "Store_Spider"
+author: "Jade"
 date: "07/25/2017"
 output: html_document
 ---
 ```{r, message = FALSE, eval=FALSE}
-#install.packages(c("rvest", "dplyr", "stringr", "RSelenium")) #安装所需package
+#install.packages(c("rvest", "dplyr", "stringr", "RSelenium")) #掳虏脳掳脣霉脨猫package
 library(rvest)
 library(dplyr)
 library(stringr)
@@ -13,8 +13,8 @@ library(RSelenium)
 library(sys)
 
 #extract categories' names
-vip_page <- read_html("http://category.vip.com/?act=brand")
-cate_list <- vip_page %>%
+page <- read_html("xxx")
+cate_list <- page %>%
   html_nodes("li span") %>%
   html_text()
 
@@ -31,7 +31,7 @@ remDr <- remoteDriver(remoteServerAddr = "127.0.0.1"
                       , port = 4444
                       , browserName = "chrome")
 remDr$open() 
-remDr$navigate("http://category.vip.com/?act=brand")
+remDr$navigate("xxx")
 webElem <- remDr$findElement(using = 'xpath', '//*[@id="J-flagship-ft-open"]')
 webElem$clickElement()
 ```
@@ -95,25 +95,5 @@ for (i in 1:cate_n) {
   }
 }
 write.csv(cate_name_df, 'temp_df.csv')
-```
-
-```{r, message = FALSE, warning = FALSE, eval=FALSE}
-#calculate the change rate
-#install.packages("readxl")
-library(readxl)
-yesterday <- as.data.frame(read_xls("D://work//projects//WebCrawler//results//vip_store_names_8.16.xls"))
-today <- as.data.frame(read_xls("D://work//projects//WebCrawler//results//vip_store_names_8.17.xls"))
-n_yesterday <- 0
-change <- 0
-for (cate in cate_list) 
-{
-  yesterday_lst <- yesterday[cate][!is.na(yesterday[cate])&yesterday[cate] != "NA"]
-  today_lst <- today[cate][!is.na(today[cate])&today[cate] != "NA"]
-  n_yesterday <- length(yesterday_lst) + n_yesterday
-  d_1 <- length(setdiff(today_lst, yesterday_lst))
-  d_2 <- length(setdiff(yesterday_lst, today_lst))
-  change <- d_1 + d_2 + change
-}
-print(change / n_yesterday)
 ```
 
