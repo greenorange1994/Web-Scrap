@@ -1,0 +1,119 @@
+---
+title: "VIP_Spider"
+author: "Julai"
+date: "07/25/2017"
+output: html_document
+---
+```{r, message = FALSE, eval=FALSE}
+#install.packages(c("rvest", "dplyr", "stringr", "RSelenium")) #安装所需package
+library(rvest)
+library(dplyr)
+library(stringr)
+library(RSelenium)
+library(sys)
+
+#extract categories' names
+vip_page <- read_html("http://category.vip.com/?act=brand")
+cate_list <- vip_page %>%
+  html_nodes("li span") %>%
+  html_text()
+
+#cate_list <- unlist(str_split(cate_list, " "))[811:822] 
+cate_list <- cate_list[2:13]
+cate_list
+cate_n <- length(cate_list)
+cate_name_df <- as.data.frame(matrix("", 254, cate_n))
+colnames(cate_name_df) <- cate_list
+
+#Open the virtual browser
+Sys.sleep(60)
+remDr <- remoteDriver(remoteServerAddr = "127.0.0.1" 
+                      , port = 4444
+                      , browserName = "chrome")
+remDr$open() 
+remDr$navigate("http://category.vip.com/?act=brand")
+webElem <- remDr$findElement(using = 'xpath', '//*[@id="J-flagship-ft-open"]')
+webElem$clickElement()
+```
+
+```{r, eval=FALSE}
+for (i in 1:cate_n) {
+  cate_name_df[, i] <- as.character(levels(cate_name_df[, i]))[cate_name_df[, i]]
+  
+  #enter each category
+  xpath <- str_c('//*[@id="J-flagship-box"]/div[1]/ul/li[', as.character(i+1), ']/span')
+  webElem <- remDr$findElement(using = "xpath", xpath)
+  webElem$clickElement()
+  Sys.sleep(5)
+  
+  for (j in 1:11) {
+    
+    for (k in 1:24) {
+      #enter each store under each page
+      xpath_store <- str_c('//*[@id="J-flagship-normal"]/a[', as.character(k), ']')
+      res <- try(webElem <- remDr$findElement(using = 'xpath', xpath_store))
+      if (inherits(res, 'try-error')) {
+        print("Final page done!")
+        break
+      }
+      url <- unlist(webElem$getElementAttribute("href"))
+      store_page <- read_html(url)
+      name <- store_page %>%
+        html_nodes('title') %>%
+        html_text()
+      #exception handling
+      if (length(name) > 1) {
+        name <- name[2]
+      }
+      print(name)
+      cate_name_df[24 * (j-1) + k, i] <- name
+      Sys.sleep(0.3)
+    }
+    
+    #enter next page under each category
+    if (i != 1 & i != 4) {
+      xpath_page <- str_c('//*[@id="J-flagship-page-wrap"]/a[', as.character(j+1), ']')
+      res <- try(webElem <- remDr$findElement(using = 'xpath', xpath_page))
+      if (inherits(res, 'try-error')) {
+        break
+      }
+    } else {
+      if (j == 1) {
+        webElem <- remDr$findElement(using = 'xpath', '//*[@id="J-flagship-page-wrap"]/a[2]')
+      } else if (j < 5) {
+        xpath_page <- str_c('//*[@id="J-flagship-page-wrap"]/a[', as.character(j+2), ']')
+        webElem <- remDr$findElement(using = 'xpath', xpath_page)
+      } else {
+        res <- try(webElem <- remDr$findElement(using = 'xpath', '//*[@id="J-flagship-page-wrap"]/a[6]'))
+        if (inherits(res, 'try-error')) {
+          break
+        }
+      }
+    }
+    webElem$clickElement()
+    Sys.sleep(5)
+  }
+}
+write.csv(cate_name_df, 'temp_df.csv')
+```
+
+```{r, message = FALSE, warning = FALSE, eval=FALSE}
+#calculate the change rate
+#install.packages("readxl")
+library(readxl)
+yesterday <- as.data.frame(read_xls("D://work//projects//WebCrawler//results//vip_store_names_8.16.xls"))
+today <- as.data.frame(read_xls("D://work//projects//WebCrawler//results//vip_store_names_8.17.xls"))
+n_yesterday <- 0
+change <- 0
+for (cate in cate_list) 
+{
+  yesterday_lst <- yesterday[cate][!is.na(yesterday[cate])&yesterday[cate] != "NA"]
+  today_lst <- today[cate][!is.na(today[cate])&today[cate] != "NA"]
+  n_yesterday <- length(yesterday_lst) + n_yesterday
+  d_1 <- length(setdiff(today_lst, yesterday_lst))
+  d_2 <- length(setdiff(yesterday_lst, today_lst))
+  change <- d_1 + d_2 + change
+}
+print(change / n_yesterday)
+```
+
