@@ -1,10 +1,3 @@
----
-title: "Store_Spider"
-author: "Jade"
-date: "07/25/2017"
-output: html_document
----
-```{r, message = FALSE, eval=FALSE}
 #install.packages(c("rvest", "dplyr", "stringr", "RSelenium")) #°²×°ËùÐèpackage
 library(rvest)
 library(dplyr)
@@ -34,9 +27,7 @@ remDr$open()
 remDr$navigate("xxx")
 webElem <- remDr$findElement(using = 'xpath', '//*[@id="J-flagship-ft-open"]')
 webElem$clickElement()
-```
 
-```{r, eval=FALSE}
 for (i in 1:cate_n) {
   cate_name_df[, i] <- as.character(levels(cate_name_df[, i]))[cate_name_df[, i]]
   
@@ -95,5 +86,4 @@ for (i in 1:cate_n) {
   }
 }
 write.csv(cate_name_df, 'temp_df.csv')
-```
 
