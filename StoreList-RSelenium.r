@@ -11,7 +11,6 @@ cate_list <- page %>%
   html_nodes("li span") %>%
   html_text()
 
-#cate_list <- unlist(str_split(cate_list, " "))[811:822] 
 cate_list <- cate_list[2:13]
 cate_list
 cate_n <- length(cate_list)
